@@ -10,7 +10,8 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../includes/pipex.h"
+#include "ft_printf.h"
+#include "pipex.h"
 
 static void	parent(int *pipes)
 {
@@ -42,7 +43,7 @@ void	forking(char *argv, char **envp, int *pipes, int fd)
 	{
 		if (fd == -1)
 		{
-			ft_printf_fd(2, "zsh: %s: %s\n", strerror(errno), argv);
+			ft_dprintf(2, "zsh: %s: %s\n", strerror(errno), argv);
 			close_pipes(pipes, EXIT_FAILURE);
 		}
 		if (dup2(pipes[1], STDOUT_FILENO) == -1)
@@ -71,8 +72,8 @@ void	free_all(char *path_cmd, char **split)
 		i = 0;
 		while (split[i] != NULL)
 		{
-			free (split[i]);
-			i++;
+			free(split[i]);
+			++i;
 		}
 		free (split);
 	}
@@ -104,11 +105,11 @@ void	close_std(int exit_code, char *err_comment, char *arg)
 {
 	if (err_comment != NULL && arg != NULL)
 	{
-		ft_printf_fd(STDERR_FILENO, "%s %s\n", err_comment, arg);
+		ft_dprintf(STDERR_FILENO, "%s %s\n", err_comment, arg);
 	}
 	else if (err_comment != NULL)
 	{
-		ft_printf_fd(STDERR_FILENO, "%s\n", err_comment);
+		ft_dprintf(STDERR_FILENO, "%s\n", err_comment);
 	}
 	if (close(STDIN_FILENO) == -1)
 	{

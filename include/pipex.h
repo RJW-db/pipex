@@ -13,7 +13,7 @@
 #ifndef PIPEX_H
 # define PIPEX_H
 
-# include "library.h"
+# include "libftx.h"
 
 # include <stdlib.h>
 # include <unistd.h>
@@ -27,8 +27,10 @@
 # include <signal.h>
 # include <errno.h>
 
+int		pipex(int argc, char **argv, char **envp);
 void	forking(char *argv, char **envp, int *pipes, int fd);
 void	child_process(char *argv, char **envp);
+void	writing(int fd, char *str, size_t len);
 void	free_all(char *path_cmd, char **split);
 int		close_pipes(int *pipes, int check);
 void	close_std(int exit_code, char *err_comment, char *arg);

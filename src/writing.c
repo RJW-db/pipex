@@ -1,34 +1,21 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        ::::::::            */
-/*   ft_memset.c                                        :+:    :+:            */
+/*   writing.c                                          :+:    :+:            */
 /*                                                     +:+                    */
 /*   By: rde-brui <rde-brui@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
-/*   Created: 2023/10/13 13:36:39 by rde-brui      #+#    #+#                 */
-/*   Updated: 2024/03/01 15:47:58 by rde-brui      ########   odam.nl         */
+/*   Created: 2024/01/29 21:11:24 by rde-brui      #+#    #+#                 */
+/*   Updated: 2024/03/18 16:18:13 by rjw           ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../includes/library.h"
+#include "pipex.h"
 
-void	*ft_memset(void *b, int c, size_t len)
+void	writing(int fd, char *str, size_t len)
 {
-	unsigned char	*charb;
-
-	charb = b;
-	while (len--)
-		*charb++ = (unsigned char)c;
-	return (b);
+	if (write(fd, str, len) == -1)
+	{
+		perror("write()");
+	}
 }
-
-// int	main(void)
-// {
-// 	char str[20] = "Hello, World!";
-// 	printf("Before memset: %s\n", str);
-
-// 	ft_memset(str, 'A', ft_strlen(str));
-// 	printf("After memset: %s\n", str);
-
-// 	return (0);
-// }
