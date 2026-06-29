@@ -1,0 +1,87 @@
+text.txt | wc -w
+text.txt | wc -l
+
+grep Bow text.txt
+grep -a Bow text.txt		// displays the line it's in
+grep -a2 Bow text.txt		// displays the line and the 2 lines above it
+grep -a -2 Bow text.txt 	// displays the line and the 2 lines below it
+
+ls | wc -l
+
+
+grep som < test1.txt
+< test1.txt grep some
+cat test1.txt | grep some
+< info.txt cat -e
+< info.txt ./program | cat -e > output.txt
+< info.txt /usr/bin/ls | cat -e > output.txt	// /usr/bin/ls | cat -e > output.txt 
+/usr/bin/ls > output.txt
+< info.txt | wc -l > output.txt
+
+
+valgrind --leak-check=full --show-leak-kinds=all --track-fds=yes --trace-children=yes -s ./a.out "test1.txt" "cat" "grep -a3 3" "grep -a2 3" "grep -a1 3" sort "test2.txt"
+
+both og bash and my script give spaces with the command "wc -w" or "wc -l"
+< test1.txt cat | grep -a1 some | grep more | wc -w > test2.txt
+
+cat << END_OF_FILE >> output.txt
+This is line 1.
+This is line 2.
+END_OF_FILE
+
+cat << LIMITER | sort >> output.txt
+or
+grep "pattern" << LIMITER | sort >> output.txt
+This is pattern line 3.
+This is line 2.
+This is pattern line 1.
+LIMITER
+
+just this by itself for heredoc
+cat << LIMITER | sort >> output.txt
+
+mandatory
+./pipex infile "grep a1" "wc -w" outfile
+bonus
+./pipex here_doc LIMITER cmd cmd1 file
+
+
+< cat cat | cat > cat
+./pipex "cat" "cat" "cat" "cat"
+
+
+sleep 10 | ls
+
+
+< test1.txt ./a.out here_doc LIMITER "sort" "cat -e" test2.txt
+--------------------------------
+5
+4
+3
+2
+1
+LIMITER
+more
+text
+here
+--------------------------------
+if LIMITER is removed from test2.txt the program gives segmentation which shouldn't be handled
+
+
+
+
+"test1.txt" "ls -la" "cat -e" "test2.txt"
+< test1.txt ls -la | cat -e > test2.txt
+
+
+
+<< LIMIT | sort
+3
+2
+1
+LIMIT
+4
+
+1
+2
+3

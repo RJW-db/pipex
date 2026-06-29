@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../includes/pipex.h"
+#include "pipex.h"
 
 static char	*path_env(char **envp)
 {
@@ -23,7 +23,7 @@ static char	*path_env(char **envp)
 		{
 			return (envp[i] + 5);
 		}
-		i++;
+		++i;
 	}
 	return (NULL);
 }
@@ -31,21 +31,21 @@ static char	*path_env(char **envp)
 // + 2, one for '/' and one for '\0'
 static char	*cmd_path_loop(const char *path, char *command, int i, int j)
 {
-	const int	cmd_len = ft_strlen(command);
+	const int	cmd_len = (int)ft_strlen(command);
 	char		*path_cmd;
 
 	while (path[i] != '\0')
 	{
 		if (path[i] == ':')
 		{
-			path_cmd = (char *)malloc((i - j + cmd_len + 2) * sizeof(char));
+			path_cmd = (char *)malloc((size_t)(i - j + cmd_len + 2));
 			if (path_cmd == NULL)
 			{
 				return (NULL);
 			}
-			ft_strlcpy(path_cmd, &path[j], i - j + 1);
+			ft_strlcpy(path_cmd, &path[j], (size_t)(i - j + 1));
 			path_cmd[i - j] = '/';
-			ft_strlcpy(&path_cmd[i - j + 1], command, cmd_len + 1);
+			ft_strlcpy(&path_cmd[i - j + 1], command, (size_t)(cmd_len + 1));
 			if (access(path_cmd, F_OK) == 0)
 			{
 				return (path_cmd);
@@ -53,7 +53,7 @@ static char	*cmd_path_loop(const char *path, char *command, int i, int j)
 			free(path_cmd);
 			j = i + 1;
 		}
-		i++;
+		++i;
 	}
 	return (NULL);
 }
@@ -78,7 +78,7 @@ void	child_process(char *argv, char **envp)
 {
 	const char	*path = path_env(envp);
 	char		*path_cmd;
-	char		**split;
+	char		**splitted;
 
 	if (path == NULL)
 		close_std(EXIT_FAILURE, "\"PATH=\" Couldn't be found in envp", NULL);
@@ -86,18 +86,18 @@ void	child_process(char *argv, char **envp)
 	{
 		close_std(EXIT_FAILURE, "argv had an empty string \"\"", NULL);
 	}
-	split = ft_split(argv, ' ');
-	if (split == NULL)
+	splitted = split(argv, ' ');
+	if (splitted == NULL)
 	{
-		close_std(EXIT_FAILURE, "malloc failed in ft_split", NULL);
+		close_std(EXIT_FAILURE, "malloc failed in split", NULL);
 	}
-	path_cmd = cmd_path(path, split[0]);
+	path_cmd = cmd_path(path, splitted[0]);
 	if (path_cmd == NULL)
 	{
-		free_all(path_cmd, split);
+		free_all(path_cmd, splitted);
 		close_std(127, "zsh: command not found:", argv);
 	}
-	execve(path_cmd, split, envp);
-	free_all(path_cmd, split);
+	execve(path_cmd, splitted, envp);
+	free_all(path_cmd, splitted);
 	close_std(EXIT_FAILURE, "execve:", strerror(errno));
 }

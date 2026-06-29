@@ -1,159 +1,184 @@
-NAME =		pipex
+NAME			:=	pipex
 
-CFLAGS =	-Wall -Wextra -Werror -fsanitize=address
-RM =		rm -f
-MKDIR_P =	mkdir -p
+MAKEFLAGS		+=	-j
+COMPILER		:=	cc
 
-MISC =		*.out \
-			.DS_Store \
-			*.dSYM/
+BASE_FLAGS		:=	-std=c99 -Wall -Wextra -Werror
 
-SRC =		pipex.c \
-			pipex_forking_utils.c \
-			pipex_child_processes.c \
-			pipex_heredoc_bonus.c
+PEDANTIC		:=	-Wpedantic -pedantic-errors -Wundef -Wstrict-prototypes
 
-LIBFT =		ft_strlen.c \
-			ft_memmove.c \
-			ft_memcpy.c \
-			ft_strlcpy.c \
-			ft_strlcat.c \
-			ft_isalpha.c \
-			ft_isdigit.c \
-			ft_isalnum.c \
-			ft_isascii.c \
-			ft_isprint.c \
-			ft_memset.c \
-			ft_bzero.c \
-			ft_toupper.c \
-			ft_tolower.c \
-			ft_strchr.c \
-			ft_strrchr.c \
-			ft_strncmp.c \
-			ft_memchr.c \
-			ft_memcmp.c \
-			ft_strnstr.c \
-			ft_atoi.c \
-			ft_calloc.c \
-			ft_strdup.c \
-			ft_substr.c \
-			ft_strjoin.c \
-			ft_strtrim.c \
-			ft_split.c \
-			ft_itoa.c \
-			ft_strmapi.c \
-			ft_striteri.c \
-			ft_putchar_fd.c \
-			ft_putstr_fd.c \
-			ft_putendl_fd.c \
-			ft_putnbr_fd.c \
-			ft_lstnew.c \
-			ft_lstadd_front.c \
-			ft_lstsize.c \
-			ft_lstlast.c \
-			ft_lstadd_back.c \
-			ft_lstdelone.c \
-			ft_lstclear.c \
-			ft_lstiter.c \
-			ft_lstmap.c \
-			get_next_line.c \
-			ft_cpy.c \
-			ft_free_str.c
+WARNINGS		:=	-Wshadow -Wconversion -Wsign-conversion			\
+					-Wformat=2 -Wuninitialized -Wunreachable-code
 
-PRINTF =	ft_printf.c \
-			ft_printf_count.c \
-			ft_printf_utils.c \
-			ft_bonus_flags.c \
-			ft_bonus_sort_spec.c \
-			ft_bonus_char.c \
-			ft_bonus_str.c \
-			ft_bonus_str_count.c \
-			ft_bonus_int.c \
-			ft_bonus_unsigned.c
+CAST_WARNINGS	:=	-Wbad-function-cast
+ifeq ($(shell $(COMPILER) --version | grep -c "gcc"),1)
+CAST_WARNINGS	+=	-Wcast-function-type
+endif
 
-OBJ_DIR =	objects
+DEPFLAGS		:=	-MMD -MP
 
-PIP_DIR =	src
-PIP_OBJ = 	$(patsubst $(PIP_DIR)/%.c, $(OBJ_DIR)/%.o, $(addprefix $(PIP_DIR)/, $(SRC)))
+OPTIMIZATION	:=	-O2
+SECURITY		:=	-fstack-protector-strong
+ifeq ($(shell uname -s),Linux)
+SECURITY		+=	-D_FORTIFY_SOURCE=2
+FSANITIZE		:=	leak
+endif
 
-LIB_DIR =	libft
-LIBOBJ = 	$(patsubst $(LIB_DIR)/%.c, $(OBJ_DIR)/%.o, $(addprefix $(LIB_DIR)/, $(LIBFT)))
-PR_DIR = 	ft_printf
-PROBJ = 	$(patsubst $(PR_DIR)/%.c, $(OBJ_DIR)/%.o, $(addprefix $(PR_DIR)/, $(PRINTF)))
-OBJ = 		$(PIP_OBJ) $(LIBOBJ) $(PROBJ)
+SANITIZERS		:=	-fsanitize=$(FSANITIZE),address,undefined,null,integer-divide-by-zero,signed-integer-overflow,bounds,alignment
+DEBUG_FLAGS		:=	-fno-omit-frame-pointer
 
-all:	objects_mkdir $(NAME)
+CFLAGS			:=	$(BASE_FLAGS) $(PEDANTIC) $(WARNINGS) $(CAST_WARNINGS)	\
+					$(DEPFLAGS) $(OPTIMIZATION) $(SECURITY)
 
-$(OBJ_DIR)/%.o: $(PIP_DIR)/%.c
-	cc $(CFLAGS) -c $< -o $@
+ifneq ($(filter valgrind,$(MAKECMDGOALS)),)
+CFLAGS			+=	-g $(DEBUG_FLAGS)
+else ifneq ($(filter debug,$(MAKECMDGOALS)),)
+CFLAGS		+=	-g3 $(SANITIZERS) $(DEBUG_FLAGS) -fno-sanitize-recover=all
+endif
 
-$(OBJ_DIR)/%.o: $(LIB_DIR)/%.c
-	cc $(CFLAGS) -c $< -o $@
+PRINT_NO_DIR	:=	--no-print-directory
+RM				:=	rm -rf
 
-$(OBJ_DIR)/%.o: $(PR_DIR)/%.c
-	cc $(CFLAGS) -c $< -o $@
+SRC_DIR			:=	src
+INC_DIR			:=	include
+BUILD_DIR		:=	.build
 
-$(NAME): $(OBJ)
-	@cc $(CFLAGS) $(OBJ) -o $(NAME)
+# Libftx
+EXT_DIR			:=	extern_library
+LIBFTX_A		:=	libftx.a
+LIBFTX_DIR		:=	$(EXT_DIR)/libftx
+LIBFTX			:=	$(LIBFTX_DIR)/$(LIBFTX_A)
+LIBFTX_INC		:=	$(LIBFTX_DIR)/$(INC_DIR)
+LIBFTX_SENTINEL	:=	$(LIBFTX_DIR)/.git
+
+SRC				:=	main.c						\
+					pipex.c						\
+					pipex_forking_utils.c		\
+					pipex_child_processes.c		\
+					pipex_heredoc_bonus.c		\
+					writing.c
+
+SRC				:=	$(addprefix $(SRC_DIR)/, $(SRC))
+OBJ				:=	$(SRC:%.c=$(BUILD_DIR)/%.o)
+DEPS			:=	$(OBJ:.o=.d)
+
+DELETE			:=	*.out			**/*.out		.DS_Store	\
+					**/.DS_Store	.dSYM/			**/.dSYM/
+
+INCLUDES		:=	-I $(INC_DIR) -I $(LIBFTX_INC)
+BUILD			:=	$(COMPILER) $(INCLUDES) $(CFLAGS)
+
+all: $(NAME)
+
+$(NAME): $(OBJ) | $(LIBFTX)
+	@$(BUILD) $(OBJ) $(LIBFTX) -o $(NAME)
+	@printf "$(CREATED)" $@ $(CUR_DIR)
+
+$(OBJ): | $(LIBFTX)
+
+$(BUILD_DIR)/%.o: %.c
+	@mkdir -p $(@D)
+	$(COMPILER) $(CFLAGS) -I $(INC_DIR) -I $(LIBFTX_INC) -c $< -o $@
+
+$(LIBFTX_SENTINEL):
+	git submodule update --init $(LIBFTX_DIR)
+	git -C $(LIBFTX_DIR) checkout $(shell git config -f .gitmodules submodule.$(LIBFTX_DIR).branch || echo main)
+	git submodule update --remote --merge $(LIBFTX_DIR)
+	cd $(LIBFTX_DIR) && git submodule update --init $(SRC_DIR)/printf $(SRC_DIR)/get_next_line
+	cd $(LIBFTX_DIR)/$(SRC_DIR)/printf &&																					\
+		git checkout $$(git config -f $(abspath $(LIBFTX_DIR))/.gitmodules submodule.src/printf.branch || echo main)
+	cd $(LIBFTX_DIR)/src/get_next_line &&																					\
+		git checkout $$(git config -f $(abspath $(LIBFTX_DIR))/.gitmodules submodule.src/get_next_line.branch || echo main)
+
+$(LIBFTX): | $(LIBFTX_SENTINEL)
+	@$(MAKE) $(PRINT_NO_DIR) -C $(LIBFTX_DIR) SUBMODULES_CMD= all printf gnl $(filter debug valgrind,$(MAKECMDGOALS))
 
 clean:
-	@$(RM) -r $(OBJ_DIR) $(MISC)
+	@$(RM) $(BUILD_DIR) $(DELETE)
+	@printf "$(REMOVED)" $(BUILD_DIR) $(CUR_DIR)$(BUILD_DIR)
 
-fclean:	clean
+fclean: clean
 	@$(RM) $(NAME)
+	@$(MAKE) $(PRINT_NO_DIR) -C $(LIBFTX_DIR) fclean
+	@printf "$(REMOVED)" $(NAME) $(CUR_DIR)
 
-re:		fclean all
-
-objects_mkdir:
-	@$(MKDIR_P) objects
+re:
+	$(MAKE) $(PRINT_NO_DIR) fclean
+	$(MAKE) $(PRINT_NO_DIR) all
 
 pip:
-	./pipex "./misc/test1.txt" "ls -la" "cat -e" "./misc/test2.txt"
-	cat ./misc/test2.txt
+	./pipex "./test/test1.txt" "ls -la" "cat -e" "./test/test2.txt"
+	cat ./test/test2.txt
 
 pip2:
-	./pipex "./misc/test1.txt" "cat" "grep -a3 3" "grep -a2 3" "./misc/test2.txt"
-	cat ./misc/test2.txt
+	./pipex "./test/test1.txt" "cat" "grep -a3 3" "grep -a2 3" "./test/test2.txt"
+	cat ./test/test2.txt
 
 pip3:
-	# ./pipex "./misc/test1.txt" "sleep 5" "sleep 5" "sleep 5" "sleep 5" sleep 5 "./misc/test2.txt"
-	cat ./misc/test2.txt
-	./pipex "./misc/test1.txt" "sleep 5" "sleep 5" "sleep 5" "sleep 5" "sleep 5" "./misc/test2.txt"
+	cat ./test/test2.txt
+	./pipex "./test/test1.txt" "sleep 5" "sleep 5" "sleep 5" "sleep 5" "sleep 5" "./test/test2.txt"
 
 pip4:
-	./pipex "./misc/test1.txt" /bin/ls "cat -e" "sort" "./misc/test2.txt"
-	cat ./misc/test2.txt
+	./pipex "./test/test1.txt" /bin/ls "cat -e" "sort" "./test/test2.txt"
+	cat ./test/test2.txt
 
 pip5:
-	./pipex "./misc/test1.txt" "./misc/program" "cat -e" sort "./misc/test2.txt"
-	cat ./misc/test2.txt
+	./pipex "./test/test1.txt" "./test/program" "cat -e" sort "./test/test2.txt"
+	cat ./test/test2.txt
 
 pip6:
-	./pipex "./misc/test1.txt" "./misc/program" sort "./misc/test2.txt"
-	cat ./misc/test2.txt
+	./pipex "./test/test1.txt" "./test/program" sort "./test/test2.txt"
+	cat ./test/test2.txt
 
 pip7:
-	./pipex "./misc/test1.txt"  'sed    "s/And/But/"' 'grep But' "./misc/test2.txt"
-	cat ./misc/test2.txt
+	./pipex "./test/test1.txt" 'sed "s/And/But/"' 'grep But' "./test/test2.txt"
+	cat ./test/test2.txt
 
 pip8:
-	./pipex "./misc/test1.txt"  './misc/program space' 'wc' "./misc/test2.txt"
-	cat ./misc/test2.txt
+	./pipex "./test/test1.txt" './test/program space' 'wc' "./test/test2.txt"
+	cat ./test/test2.txt
 
 pipb:
-	./pipex here_doc LIMITER "sort" "wc -l" ./misc/test2.txt
-	cat ./misc/test2.txt
+	./pipex here_doc LIMITER "sort" "wc -l" ./test/test2.txt
+	cat ./test/test2.txt
 
 pipb2:
-	./pipex here_doc LIMITER "sort" ./misc/test2.txt
-	cat ./misc/test2.txt
+	./pipex here_doc LIMITER "sort" ./test/test2.txt
+	cat ./test/test2.txt
 
 pipb3:
-	./pipex here_doc LIMITER "sort" "cat -e" ./misc/test2.txt
-	cat ./misc/test2.txt
+	./pipex here_doc LIMITER "sort" "cat -e" ./test/test2.txt
+	cat ./test/test2.txt
 
 pipb4:
-	./pipex here_doc e "sort" "cat -e" ./misc/test2.txt
-	cat ./misc/test2.txt
+	./pipex here_doc e "sort" "cat -e" ./test/test2.txt
+	cat ./test/test2.txt
 
-.PHONY:	all clean fclean re objects_mkdir
+debug: all
+
+valgrind: all
+
+print-%:
+	$(info $($*))
+
+-include $(DEPS)
+
+.PHONY:	all clean fclean re						\
+		pip pip2 pip3 pip4 pip5 pip6 pip7 pip8	\
+		pipb pipb2 pipb3 pipb4					\
+		debug valgrind print-%
+
+# Terminal markup
+BOLD			:=	\033[1m
+GREEN			:=	\033[32m
+MAGENTA			:=	\033[35m
+CYAN			:=	\033[36m
+RESET			:=	\033[0m
+
+R_MARK_UP		:=	$(MAGENTA)$(BOLD)
+CA_MARK_UP		:=	$(GREEN)$(BOLD)
+
+# Current directory and formatted status messages
+CUR_DIR			:=	$(dir $(abspath $(firstword $(MAKEFILE_LIST))))
+REMOVED			:=	$(R_MARK_UP)REMOVED $(CYAN)%s$(MAGENTA) (%s) $(RESET)\n
+CREATED			:=	$(CA_MARK_UP)CREATED $(CYAN)%s$(GREEN) (%s) $(RESET)\n

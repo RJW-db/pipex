@@ -10,7 +10,8 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../includes/pipex.h"
+#include "ft_printf.h"
+#include "pipex.h"
 
 // - fd == -1 is in child process, because the other commands should still work.
 static void	infile(char **argv, char **envp, int *pipes)
@@ -78,7 +79,7 @@ static pid_t	outfile(int argc, char **argv, char **envp)
 	fd = open(argv[argc - 1], fd_flags, 0777);
 	if (fd == -1)
 	{
-		ft_printf_fd(2, "zsh: %s: %s\n", strerror(errno), argv[argc - 1]);
+		ft_dprintf(2, "zsh: %s: %s\n", strerror(errno), argv[argc - 1]);
 		close_std(EXIT_FAILURE, NULL, NULL);
 	}
 	if (dup2(fd, STDOUT_FILENO) == -1)
@@ -94,12 +95,12 @@ static pid_t	outfile(int argc, char **argv, char **envp)
 	return (pid);
 }
 
-static int	pipex(int argc, char **argv, char **envp)
+int	pipex(int argc, char **argv, char **envp)
 {
-	int			pipes[2];
-	int			i;
-	pid_t		pid;
-	int			status;
+	int		pipes[2];
+	int		i;
+	pid_t	pid;
+	int		status;
 
 	infile(argv, envp, pipes);
 	i = 1;
@@ -119,29 +120,4 @@ static int	pipex(int argc, char **argv, char **envp)
 		continue ;
 	}
 	return (status);
-}
-
-int	main(int argc, char **argv, char **envp)
-{
-	int	exitcode;
-
-	if (argc <= 4)
-	{
-		write(2, "Not enough arguments\n", 21);
-		return (1);
-	}
-	if (ft_strncmp(argv[1], "here_doc", 9) == 0)
-	{
-		if (here_document(&argc, &argv) == false)
-		{
-			return (EXIT_FAILURE);
-		}
-	}
-	exitcode = pipex(argc, argv, envp);
-	if (WIFEXITED(exitcode) == true)
-	{
-		exitcode = WEXITSTATUS(exitcode);
-	}
-	unlink(".tmp.txt");
-	return (exitcode);
 }
